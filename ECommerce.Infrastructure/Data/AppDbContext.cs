@@ -16,5 +16,6 @@ namespace ECommerce.Infrastructure.Data
             : base(options)
         {
         }
+
     }
 }

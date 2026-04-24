@@ -39,8 +39,15 @@ namespace ECommerce.Infrastructure.Services
                 PasswordHash = registerDto.Password
             };
 
-            await _userManager.CreateAsync(user, registerDto.Password);
-
+            var result = await _userManager.CreateAsync(user, registerDto.Password);
+            if (!result.Succeeded)
+            {
+                return new AuthResponse
+                {
+                    IsSuccess = false,
+                    Message = string.Join(", ", result.Errors.Select(e => e.Description))
+                };
+            }
             return new AuthResponse
             {
                 IsSuccess = true,

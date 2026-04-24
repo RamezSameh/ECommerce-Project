@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ECommerce.Core.Entities
+namespace ECommerce.Application.DTOs
 {
     public class AuthResponse
     {
