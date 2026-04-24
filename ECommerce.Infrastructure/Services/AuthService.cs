@@ -27,19 +27,24 @@ namespace ECommerce.Infrastructure.Services
         {
             var existingUser = await _userManager.Users
                 .FirstOrDefaultAsync(u => u.Email == registerDto.Email);
+
             if (existingUser != null)
             {
-                throw new ArgumentException("User with this email already exists.");
+                return new AuthResponse
+                {
+                    IsSuccess = false,
+                    Message = "Email already exists"
+                };
             }
 
             var user = new User
             {
                 UserName = registerDto.UserName,
-                Email = registerDto.Email,
-                PasswordHash = registerDto.Password
+                Email = registerDto.Email
             };
 
             var result = await _userManager.CreateAsync(user, registerDto.Password);
+
             if (!result.Succeeded)
             {
                 return new AuthResponse
@@ -48,30 +53,30 @@ namespace ECommerce.Infrastructure.Services
                     Message = string.Join(", ", result.Errors.Select(e => e.Description))
                 };
             }
+            await _userManager.AddToRoleAsync(user, "User");
             return new AuthResponse
             {
                 IsSuccess = true,
                 Message = "User registered successfully",
                 Email = user.Email,
                 Roles = new List<string>()
-
             };
         }
 
         public async Task<AuthResponse> Login(LoginDto dto)
         {
-            // في الـ Constructor لازم تعمل Inject لـ UserManager<ApplicationUser>
             var user = await _userManager.FindByEmailAsync(dto.Email);
-            if (user == null)
-                throw new Exception("Invalid login");
 
-            var result = await _userManager.CheckPasswordAsync(user, dto.Password);
-
-            if (!result)
-                throw new Exception("Invalid login");
+            if (user == null || !await _userManager.CheckPasswordAsync(user, dto.Password))
+            {
+                return new AuthResponse
+                {
+                    IsSuccess = false,
+                    Message = "Invalid email or password"
+                };
+            }
 
             var roles = await _userManager.GetRolesAsync(user);
-
             var token = _tokenService.GenerateToken(user, roles);
 
             return new AuthResponse
