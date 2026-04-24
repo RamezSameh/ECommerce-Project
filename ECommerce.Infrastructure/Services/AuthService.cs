@@ -1,14 +1,16 @@
-﻿using System;
+﻿using ECommerce.Application.DTOs;
+using ECommerce.Application.Services;
+using ECommerce.Core.Entities;
+using ECommerce.Infrastructure.Data;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ECommerce.Application.DTOs;
-using ECommerce.Application.Services;
-using ECommerce.Core.Entities;
-using ECommerce.Infrastructure.Data;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Infrastructure.Services
 {
@@ -53,7 +55,16 @@ namespace ECommerce.Infrastructure.Services
                     Message = string.Join(", ", result.Errors.Select(e => e.Description))
                 };
             }
-            await _userManager.AddToRoleAsync(user, "User");
+            var roleResult = await _userManager.AddToRoleAsync(user, "User");
+
+            if (!roleResult.Succeeded)
+            {
+                return new AuthResponse
+                {
+                    IsSuccess = false,
+                    Message = string.Join(", ", roleResult.Errors.Select(e => e.Description))
+                };
+            }
             return new AuthResponse
             {
                 IsSuccess = true,
@@ -88,5 +99,6 @@ namespace ECommerce.Infrastructure.Services
                 Roles = roles.ToList()
             };
         }
+
     }
 }
