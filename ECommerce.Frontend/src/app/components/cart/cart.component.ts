@@ -1,32 +1,19 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CartService } from '../../services/cart.service';
+import { Cart } from '../../models/api.models';
 
-@Component({
-  selector: 'app-cart',
-  template: `
-    <div class="p-4 max-w-4xl mx-auto">
-      <h2 class="text-2xl font-bold mb-4">Cart</h2>
-      <table class="w-full border-collapse">
-        <thead><tr class="bg-gray-100"><th>Name</th><th>Qty</th><th>Action</th></tr></thead>
-        <tbody>
-          <tr *ngFor="let item of cart?.items || []" class="border-b">
-            <td>{{ item.productName }}</td>
-            <td>{{ item.quantity }}</td>
-            <td><button (click)="remove(item.productId)" class="text-red-600">Remove</button></td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="mt-4 font-bold">Subtotal: {{ cart?.subtotal || 0 | currency }}</div>
-      <a routerLink="/checkout" class="inline-block mt-4 bg-green-600 text-white px-4 py-2 rounded">Checkout</a>
-    </div>
-  `
-})
-export class CartComponent {
-  cart: any = {};
-  constructor(private cs: CartService) {
-    this.cs.getCart().subscribe(r => this.cart = (r as any)?.data || r);
-  }
-  remove(productId: number) {
-    this.cs.removeItem(productId).subscribe(r => this.cart = (r as any)?.data || r);
-  }
+@Component({ selector: 'app-cart', template: `
+  <section class="content-width page-section"><div class="section-heading"><div><span class="eyebrow">حقيبتك</span><h1>سلة التسوق</h1></div><span>{{ cart?.items?.length || 0 }} منتجات</span></div><div class="cart-layout" *ngIf="cart?.items?.length; else empty">
+  <div class="card cart-items"><article *ngFor="let item of cart.items" class="cart-row"><div class="cart-icon">✦</div><div class="cart-product"><h3>{{ item.productName }}</h3><small>{{ item.variantSummary || 'المنتج الأساسي' }}</small></div><div class="quantity"><button (click)="update(item.productId, item.quantity - 1)" [disabled]="item.quantity <= 1">−</button><span>{{ item.quantity }}</span><button (click)="update(item.productId, item.quantity + 1)">+</button></div><strong>{{ item.lineTotal | currency:'USD' }}</strong><button class="remove" (click)="remove(item.productId)">×</button></article><div class="coupon"><input [(ngModel)]="coupon" placeholder="رمز الخصم" /><button class="outline" (click)="applyCoupon()">تطبيق</button><button class="text-button" *ngIf="cart.couponCode" (click)="removeCoupon()">إزالة الكوبون</button></div></div>
+  <aside class="card summary"><h2>ملخص الطلب</h2><div><span>المجموع الفرعي</span><b>{{ cart.subtotal | currency:'USD' }}</b></div><div><span>الخصم</span><b class="discount">-{{ cart.discount | currency:'USD' }}</b></div><div><span>الضريبة</span><b>{{ cart.tax | currency:'USD' }}</b></div><hr /><div class="total"><span>الإجمالي</span><b>{{ cart.total | currency:'USD' }}</b></div><a routerLink="/checkout" class="primary full">إتمام الطلب</a></aside></div><ng-template #empty><div class="card empty"><h2>السلة فارغة</h2><p>أضف منتجاتك المفضلة لتظهر هنا.</p><a routerLink="/" class="primary">تصفح المنتجات</a></div></ng-template></section>
+`, standalone: false })
+export class CartComponent implements OnInit {
+  cart?: Cart; coupon = '';
+  constructor(private cs: CartService) {}
+  ngOnInit(): void { this.refresh(); }
+  refresh(): void { this.cs.getCart().subscribe(r => this.cart = r.data || undefined); }
+  update(id: number, quantity: number): void { this.cs.updateItem(id, quantity).subscribe(r => this.cart = r.data || undefined); }
+  remove(id: number): void { this.cs.removeItem(id).subscribe(r => this.cart = r.data || undefined); }
+  applyCoupon(): void { if (this.coupon) this.cs.applyCoupon(this.coupon).subscribe(r => this.cart = r.data || undefined); }
+  removeCoupon(): void { this.cs.removeCoupon().subscribe(r => this.cart = r.data || undefined); }
 }

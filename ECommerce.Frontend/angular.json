@@ -18,7 +18,7 @@
             "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
             "assets": ["src/assets"],
-            "styles": [],
+            "styles": ["src/styles.css"],
             "scripts": []
           },
           "configurations": {
@@ -40,8 +40,17 @@
         },
         "serve": {
           "builder":"@angular-devkit/build-angular:dev-server",
-          "options":{"browserTarget":"ecommerce-frontend:build"},
-          "configurations":{"production":{"browserTarget":"ecommerce-frontend:build:production"},"development":{"browserTarget":"ecommerce-frontend:build:development"}},
+          "options": {
+            "buildTarget": "ecommerce-frontend:build"
+          },
+          "configurations": {
+            "production": {
+              "buildTarget": "ecommerce-frontend:build:production"
+            },
+            "development": {
+              "buildTarget": "ecommerce-frontend:build:development"
+            }
+          },
           "defaultConfiguration":"development"
         }
       }
