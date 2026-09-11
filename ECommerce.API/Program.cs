@@ -179,6 +179,13 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// ---- Demo catalog for local development ----
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await DemoDataSeeder.SeedAsync(db);
+}
+
 // ---- Pipeline ----
 if (app.Environment.IsDevelopment())
 {

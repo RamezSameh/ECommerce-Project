@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CartService } from '../../services/cart.service';
 import { ProductService } from '../../services/product.service';
 import { Category, ProductSummary, PagedResult } from '../../models/api.models';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-product-list',
@@ -26,10 +27,10 @@ import { Category, ProductSummary, PagedResult } from '../../models/api.models';
 })
 export class ProductListComponent implements OnInit {
   products: ProductSummary[] = []; categories: Category[] = []; search = ''; categoryId?: number; minPrice?: number; maxPrice?: number; sortBy = ''; page = 1; totalPages = 0; totalCount = 0; loading = false;
-  constructor(private ps: ProductService, private cs: CartService, private router: Router, private route: ActivatedRoute) {}
+  constructor(private ps: ProductService, private cs: CartService, private router: Router, private route: ActivatedRoute, private notifications: NotificationService) {}
   ngOnInit(): void { this.route.queryParams.subscribe(params => { this.search = params['search'] || ''; this.load(1); }); this.ps.getCategories().subscribe(r => this.categories = r.data || []); }
   load(page: number): void { this.loading = true; this.page = page; this.ps.getAll({ search: this.search, categoryId: this.categoryId, minPrice: this.minPrice, maxPrice: this.maxPrice, sortBy: this.sortBy, page }).subscribe(r => { const data = r.data as PagedResult<ProductSummary> | null; this.products = data?.items || []; this.totalPages = data?.totalPages || 0; this.totalCount = data?.totalCount || 0; this.loading = false; }); }
-  add(product: ProductSummary): void { this.cs.addItem({ productId: product.id, quantity: 1 }).subscribe(); }
+  add(product: ProductSummary): void { this.cs.addItem({ productId: product.id, quantity: 1 }).subscribe({ next: () => this.notifications.show(`تمت إضافة «${product.name}» إلى السلة`), error: () => this.notifications.show('تعذرت إضافة المنتج إلى السلة', 'error') }); }
   open(id: number): void { this.router.navigate(['/products', id]); }
   scrollToProducts(): void { document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' }); }
 }

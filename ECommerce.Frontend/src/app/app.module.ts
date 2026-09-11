@@ -13,13 +13,15 @@ import { CheckoutComponent } from './components/orders/checkout.component';
 import { OrdersComponent } from './components/orders/orders.component';
 import { AdminComponent } from './components/admin/admin.component';
 import { AuthGuard, AdminGuard } from './guards/auth.guard';
+import { ProfileComponent } from './components/profile/profile.component';
 
 @NgModule({
-  declarations: [AppComponent, ProductListComponent, ProductDetailComponent, WishlistComponent, LoginComponent, CartComponent, CheckoutComponent, OrdersComponent, AdminComponent],
+  declarations: [AppComponent, ProductListComponent, ProductDetailComponent, WishlistComponent, ProfileComponent, LoginComponent, CartComponent, CheckoutComponent, OrdersComponent, AdminComponent],
   imports: [BrowserModule, FormsModule, RouterModule.forRoot([
     { path: '', component: ProductListComponent },
     { path: 'products/:id', component: ProductDetailComponent },
     { path: 'wishlist', component: WishlistComponent, canActivate: [AuthGuard] },
+    { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard] },
     { path: 'login', component: LoginComponent },
     { path: 'cart', component: CartComponent },
     { path: 'checkout', component: CheckoutComponent, canActivate: [AuthGuard] },

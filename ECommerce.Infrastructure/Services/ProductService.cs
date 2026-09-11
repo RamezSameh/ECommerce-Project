@@ -107,6 +107,7 @@ public class ProductService : IProductService
             Images = product.Images.Select(i => new ProductImageDto { Id = i.Id, Url = i.Url, IsMain = i.IsMain }).ToList(),
             Variants = product.Variants.Select(v => new ProductVariantDto
             {
+                Id = v.Id,
                 Name = v.Name, Value = v.Value, Price = v.Price, Stock = v.Stock
             }).ToList()
         };

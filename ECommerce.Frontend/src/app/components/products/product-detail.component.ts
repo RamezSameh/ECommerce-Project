@@ -4,6 +4,7 @@ import { CartService } from '../../services/cart.service';
 import { ProductService } from '../../services/product.service';
 import { AuthService } from '../../services/auth.service';
 import { Product, Review, PagedResult } from '../../models/api.models';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({ selector: 'app-product-detail', template: `
   <section class="detail-page" *ngIf="product"><div class="detail-image"><img *ngIf="mainImage" [src]="mainImage" [alt]="product.name" /><span *ngIf="!mainImage">✦</span></div>
@@ -12,9 +13,9 @@ import { Product, Review, PagedResult } from '../../models/api.models';
 `, standalone: false })
 export class ProductDetailComponent implements OnInit {
   product?: Product; reviews: Review[] = []; selectedVariant?: Product['variants'][number]; quantity = 1; rating = 5; comment = ''; mainImage = '';
-  constructor(private route: ActivatedRoute, private ps: ProductService, private cs: CartService, public auth: AuthService) {}
+  constructor(private route: ActivatedRoute, private ps: ProductService, private cs: CartService, public auth: AuthService, private notifications: NotificationService) {}
   ngOnInit(): void { const id = Number(this.route.snapshot.paramMap.get('id')); this.ps.getById(id).subscribe(r => { this.product = r.data || undefined; this.mainImage = this.product?.images.find(i => i.isMain)?.url || this.product?.images[0]?.url || ''; }); this.ps.getReviews(id).subscribe(r => this.reviews = (r.data as PagedResult<Review> | null)?.items || []); }
-  add(): void { if (this.product) this.cs.addItem({ productId: this.product.id, variantId: this.selectedVariant?.id, quantity: this.quantity }).subscribe(); }
-  wishlist(): void { if (this.product) this.ps.addToWishlist(this.product.id, this.auth.getHeaders()).subscribe(); }
+  add(): void { if (this.product) this.cs.addItem({ productId: this.product.id, variantId: this.selectedVariant?.id, quantity: this.quantity }).subscribe({ next: () => this.notifications.show(`تمت إضافة «${this.product?.name}» إلى السلة`), error: () => this.notifications.show('تعذرت إضافة المنتج إلى السلة', 'error') }); }
+  wishlist(): void { if (this.product) this.ps.addToWishlist(this.product.id, this.auth.getHeaders()).subscribe({ next: () => this.notifications.show('تمت إضافة المنتج إلى المفضلة'), error: () => this.notifications.show('المنتج موجود بالفعل في المفضلة', 'info') }); }
   submitReview(): void { if (this.product) this.ps.addReview(this.product.id, { rating: this.rating, comment: this.comment }, this.auth.getHeaders()).subscribe(r => { if (r.data) this.reviews.unshift(r.data); this.comment = ''; }); }
 }
