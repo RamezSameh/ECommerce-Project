@@ -83,7 +83,7 @@ builder.Services.AddRateLimiter(options =>
 });
 
 // ---- CORS ----
-var corsOrigins = builder.Configuration.GetSection("Cors").Get<string[]>() ?? new[] { "http://localhost:5173" };
+var corsOrigins = builder.Configuration.GetSection("Cors").Get<string[]>() ?? new[] { "http://localhost:4200" };
 builder.Services.AddCors(o => o.AddPolicy("default", p =>
     p.WithOrigins(corsOrigins).AllowAnyHeader().AllowAnyMethod()));
 
@@ -157,6 +157,7 @@ using (var scope = app.Services.CreateScope())
     if (db.Database.IsSqlServer() && db.Database.GetPendingMigrations().Any())
         db.Database.Migrate();
 }
+
 
 // ---- Seed roles + default admin ----
 using (var scope = app.Services.CreateScope())
