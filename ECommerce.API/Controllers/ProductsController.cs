@@ -103,6 +103,10 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> Categories()
         => Ok(ApiResponse<object>.Success(await _productService.GetCategories()));
 
+    [HttpGet("categories/tree")]
+    public async Task<IActionResult> CategoryTree()
+        => Ok(ApiResponse<object>.Success(await _productService.GetCategoryTree()));
+
     [Authorize(Roles = "Admin")]
     [HttpPost("categories")]
     public async Task<IActionResult> CreateCategory(CreateCategoryDto dto)
@@ -110,4 +114,11 @@ public class ProductsController : ControllerBase
         await _productService.CreateCategory(dto);
         return Ok(ApiResponse<object>.Success(null!, "Category created"));
     }
+
+    // Inventory
+    [Authorize(Roles = "Admin")]
+    [HttpGet("low-stock")]
+    public async Task<IActionResult> LowStock(
+        [FromQuery] int threshold = 5, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        => Ok(ApiResponse<object>.Success(await _productService.GetLowStockProducts(threshold, page, pageSize)));
 }

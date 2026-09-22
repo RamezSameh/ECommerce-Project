@@ -42,23 +42,12 @@ public class UpdateOrderStatusDto
     public OrderStatus Status { get; set; }
 }
 
-public class CreateCouponDto
+/// <summary>Outcome of processing a verified Stripe webhook event for an order payment.</summary>
+public class StripeWebhookResult
 {
-    public string Code { get; set; } = string.Empty;
-    public decimal? DiscountAmount { get; set; }
-    public double? DiscountPercent { get; set; }
-    public DateTime? ExpiresAt { get; set; }
-    public int? MaxUsages { get; set; }
-}
-
-public class CouponDto
-{
-    public int Id { get; set; }
-    public string Code { get; set; } = string.Empty;
-    public decimal? DiscountAmount { get; set; }
-    public double? DiscountPercent { get; set; }
-    public bool IsActive { get; set; }
-    public DateTime? ExpiresAt { get; set; }
-    public int? MaxUsages { get; set; }
-    public int UsageCount { get; set; }
+    public int OrderId { get; set; }
+    public string EventType { get; set; } = string.Empty;
+    public bool PaymentSucceeded { get; set; }
+    public string? ExternalPaymentId { get; set; }
+    public decimal? AmountPaid { get; set; }
 }

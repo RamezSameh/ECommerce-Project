@@ -54,6 +54,18 @@ export class AuthService {
     localStorage.removeItem(this.rolesKey);
     this.router.navigate(['/login']);
   }
+  verifyEmail(data: object): Observable<ApiResponse<AuthResponse>> {
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.api}/verify-email`, data);
+  }
+  forgotPassword(data: object): Observable<ApiResponse<AuthResponse>> {
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.api}/forgot-password`, data);
+  }
+  resetPassword(data: object): Observable<ApiResponse<AuthResponse>> {
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.api}/reset-password`, data);
+  }
+  changePassword(data: object): Observable<ApiResponse<AuthResponse>> {
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.api}/change-password`, data, { headers: this.getHeaders() });
+  }
   getHeaders(): HttpHeaders {
     const token = this.getToken();
     return new HttpHeaders({

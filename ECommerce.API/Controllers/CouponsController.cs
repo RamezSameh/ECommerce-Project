@@ -1,5 +1,5 @@
 using ECommerce.Application.DTOs;
-using ECommerce.Application.DTOs.Order;
+using ECommerce.Application.DTOs.Coupon;
 using ECommerce.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,6 +23,10 @@ public class CouponsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create(CreateCouponDto dto)
         => Ok(ApiResponse<CouponDto>.Success(await _couponService.CreateAsync(dto), "Coupon created"));
+
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(int id, UpdateCouponDto dto)
+        => Ok(ApiResponse<CouponDto>.Success(await _couponService.UpdateAsync(id, dto), "Coupon updated"));
 
     [HttpPost("{id:int}/toggle")]
     public async Task<IActionResult> Toggle(int id)

@@ -1,3 +1,4 @@
+using ECommerce.Application.DTOs.Coupon;
 using ECommerce.Application.DTOs.Order;
 using ECommerce.Application.Helpers;
 
@@ -16,6 +17,7 @@ public interface IOrderService
 public interface ICouponService
 {
     Task<CouponDto> CreateAsync(CreateCouponDto dto);
+    Task<CouponDto> UpdateAsync(int id, UpdateCouponDto dto);
     Task<PagedResult<CouponDto>> GetAllAsync(int page, int pageSize);
     Task ToggleActiveAsync(int id);
     Task DeleteAsync(int id);

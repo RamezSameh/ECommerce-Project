@@ -8,11 +8,22 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - JWT_KEY=${JWT_KEY:-THIS_IS_MY_SUPER_SECRET_KEY_123456}
       - ConnectionStrings__DefaultConnection=Server=db;Database=ECommerceDb;User=sa;Password=Your_password123;TrustServerCertificate=True
+      - ConnectionStrings__Redis=${REDIS_CONNECTION_STRING:-redis:6379}
       - Logging__LogLevel__Default=Information
     depends_on:
       - db
+      - redis
     networks:
       - ecommerce-net
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - ecommerce-net
+    volumes:
+      - redis-data:/data
 
   db:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -31,3 +42,4 @@ networks:
 
 volumes:
   sql-data:
+  redis-data:

@@ -19,6 +19,9 @@ export class AdminService {
   promoteVendor(id: string): Observable<ApiResponse<null>> {
     return this.http.post<ApiResponse<null>>(`${this.api}/admin/users/${id}/promote-vendor`, {}, this.options());
   }
+  deleteUser(id: string): Observable<ApiResponse<null>> {
+    return this.http.delete<ApiResponse<null>>(`${this.api}/admin/users/${id}`, this.options());
+  }
   sales(): Observable<ApiResponse<SalesReport>> { return this.http.get<ApiResponse<SalesReport>>(`${this.api}/admin/reports/sales`, this.options()); }
   orders(status?: number): Observable<ApiResponse<PagedResult<Order>>> {
     let params = new HttpParams().set('page', 1).set('pageSize', 20);

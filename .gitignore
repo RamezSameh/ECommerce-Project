@@ -362,3 +362,10 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Angular build output
+ECommerce.Frontend/dist/
+ECommerce.Frontend/.angular/
+
+# Logs
+logs/
+*.log

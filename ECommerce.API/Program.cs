@@ -92,10 +92,12 @@ builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
-// ---- JWT (secret from env with dev fallback) ----
+// ---- JWT (secret from env only; fail fast if missing outside Development) ----
 var jwtSection = builder.Configuration.GetSection("Jwt");
 var envKey = Environment.GetEnvironmentVariable("JWT_KEY");
 var jwtKey = string.IsNullOrWhiteSpace(envKey) ? jwtSection["Key"] : envKey;
+if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey == "SET_VIA_JWT_KEY_ENV_VAR")
+    throw new InvalidOperationException("JWT signing key is not configured. Set the JWT_KEY environment variable.");
 builder.Services.Configure<JwtSettings>(jwtSection);
 builder.Services.Configure<JwtSettings>(opt => opt.Key = jwtKey);
 
@@ -130,7 +132,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // ---- DI  ----
 builder.Services.AddMemoryCache();
-builder.Services.AddScoped<ICacheService, InMemoryCacheService>();
+builder.Services.AddScoped<ICacheService, RedisCacheService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProductService, ProductService>();
@@ -139,8 +141,16 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<ICouponService, CouponService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IPaymentService, StripePaymentService>();
-builder.Services.AddScoped<IEmailService, DevelopmentEmailService>();
-builder.Services.AddScoped<IImageStorage, LocalImageStorage>();
+builder.Services.AddScoped<IStripeWebhookService, StripeWebhookService>();
+var smtpHost = builder.Configuration["Email:Smtp:Host"];
+if (!string.IsNullOrWhiteSpace(smtpHost) && smtpHost != "smtp.example.com")
+    builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+else
+    builder.Services.AddScoped<IEmailService, DevelopmentEmailService>();
+if (string.Equals(builder.Configuration["ImageStorage:Provider"], "Cloudinary", StringComparison.OrdinalIgnoreCase))
+    builder.Services.AddScoped<IImageStorage, CloudinaryImageStorage>();
+else
+    builder.Services.AddScoped<IImageStorage, LocalImageStorage>();
 builder.Services.AddScoped<InvoiceService>();
 
 // ---- FluentValidation ----
@@ -169,8 +179,10 @@ using (var scope = app.Services.CreateScope())
             await roleManager.CreateAsync(new IdentityRole(role));
 
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
-    const string adminEmail = "admin@site.com";
-    const string adminPassword = "Admin@123";
+    var adminEmail = Environment.GetEnvironmentVariable("SEED_ADMIN_EMAIL") ?? "admin@site.com";
+    var adminPassword = Environment.GetEnvironmentVariable("SEED_ADMIN_PASSWORD") ?? "Admin@123";
+    if (!app.Environment.IsDevelopment() && adminPassword == "Admin@123")
+        throw new InvalidOperationException("SEED_ADMIN_PASSWORD must be set to a strong password in non-development environments.");
     if (await userManager.FindByEmailAsync(adminEmail) == null)
     {
         var admin = new User { UserName = "admin", Email = adminEmail, FullName = "Site Administrator", EmailConfirmed = true };
@@ -204,3 +216,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Makes the entry point visible to WebApplicationFactory<Program> in the integration tests.
+public partial class Program { }

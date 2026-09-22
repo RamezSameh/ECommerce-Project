@@ -292,6 +292,34 @@ public class ProductService : IProductService
         return cats;
     }
 
+    public async Task<List<CategoryTreeDto>> GetCategoryTree()
+    {
+        var cached = await _cache.GetAsync<List<CategoryTreeDto>>("category-tree");
+        if (cached is not null) return cached;
+
+        var flat = await _context.Categories.AsNoTracking()
+            .OrderBy(c => c.Name)
+            .Select(c => new CategoryTreeDto { Id = c.Id, Name = c.Name, Slug = c.Slug, ParentId = c.ParentId })
+            .ToListAsync();
+
+        var byParent = flat.ToLookup(c => c.ParentId);
+
+        List<CategoryTreeDto> Build(int? parentId)
+        {
+            var nodes = new List<CategoryTreeDto>();
+            foreach (var node in byParent[parentId])
+            {
+                node.Children = Build(node.Id);
+                nodes.Add(node);
+            }
+            return nodes;
+        }
+
+        var tree = Build(null);
+        await _cache.SetAsync("category-tree", tree, TimeSpan.FromMinutes(30));
+        return tree;
+    }
+
     public async Task CreateCategory(CreateCategoryDto dto)
     {
         if (dto.ParentId.HasValue && !await _context.Categories.AnyAsync(c => c.Id == dto.ParentId.Value))
@@ -305,6 +333,35 @@ public class ProductService : IProductService
         });
         await _context.SaveChangesAsync();
         await _cache.RemoveAsync("categories");
+        await _cache.RemoveAsync("category-tree");
+    }
+
+    // ---- Inventory ----
+
+    public async Task<PagedResult<ProductSummaryDto>> GetLowStockProducts(int threshold, int page, int pageSize)
+    {
+        if (threshold < 0) threshold = 0;
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+
+        var q = _context.Products.AsNoTracking().Where(p => p.Stock <= threshold);
+        var total = await q.CountAsync();
+        var items = await q
+            .OrderBy(p => p.Stock).ThenBy(p => p.Name)
+            .Skip((page - 1) * pageSize).Take(pageSize)
+            .Select(p => new ProductSummaryDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Price = p.Price,
+                Brand = p.Brand,
+                AverageRating = p.AverageRating,
+                ReviewCount = p.ReviewCount,
+                Stock = p.Stock,
+                ImageUrl = p.Images.Where(i => i.IsMain).Select(i => i.Url).FirstOrDefault()
+            }).ToListAsync();
+
+        return PagedResult<ProductSummaryDto>.Create(items, total, page, pageSize);
     }
 
     // ---- private ----

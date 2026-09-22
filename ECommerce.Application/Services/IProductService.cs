@@ -23,7 +23,11 @@ public interface IProductService
 
     // Categories
     Task<List<CategoryDto>> GetCategories();
+    Task<List<CategoryTreeDto>> GetCategoryTree();
     Task CreateCategory(CreateCategoryDto dto);
+
+    // Inventory
+    Task<PagedResult<ProductSummaryDto>> GetLowStockProducts(int threshold, int page, int pageSize);
 }
 
 /// <summary>Query payload for the search/filter/sort/paginate product endpoint.</summary>

@@ -36,6 +36,16 @@ public class CategoryDto
     public int? ParentId { get; set; }
 }
 
+/// <summary>Category node with nested children, used by the category tree endpoint.</summary>
+public class CategoryTreeDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Slug { get; set; }
+    public int? ParentId { get; set; }
+    public List<CategoryTreeDto> Children { get; set; } = new();
+}
+
 /// <summary>Full product detail returned by GetById.</summary>
 public class ProductDto
 {

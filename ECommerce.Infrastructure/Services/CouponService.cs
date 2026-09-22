@@ -1,4 +1,4 @@
-using ECommerce.Application.DTOs.Order;
+using ECommerce.Application.DTOs.Coupon;
 using ECommerce.Application.Exceptions;
 using ECommerce.Application.Helpers;
 using ECommerce.Application.Services;
@@ -45,6 +45,37 @@ public class CouponService : ICouponService
         var items = await q.OrderByDescending(c => c.CreatedAt)
             .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
         return PagedResult<CouponDto>.Create(items.Select(Map).ToList(), total, page, pageSize);
+    }
+
+    public async Task<CouponDto> UpdateAsync(int id, UpdateCouponDto dto)
+    {
+        var coupon = await _context.Coupons.FindAsync(id)
+            ?? throw new NotFoundException($"Coupon {id} not found");
+
+        if (!string.IsNullOrWhiteSpace(dto.Code))
+        {
+            var code = dto.Code.Trim().ToUpperInvariant();
+            if (await _context.Coupons.AnyAsync(c => c.Id != id && c.Code == code))
+                throw new BusinessException("Coupon code already exists");
+            coupon.Code = code;
+        }
+
+        // Discount fields: omitted = unchanged. Providing one replaces the
+        // current discount (the other discount type is cleared, they are mutually exclusive).
+        if (dto.DiscountAmount.HasValue || dto.DiscountPercent.HasValue)
+        {
+            if (dto.DiscountAmount.HasValue && dto.DiscountPercent.HasValue)
+                throw new BusinessException("Specify either a fixed amount or a percentage, not both");
+            coupon.DiscountAmount = dto.DiscountAmount;
+            coupon.DiscountPercent = dto.DiscountPercent;
+        }
+
+        if (dto.IsActive.HasValue) coupon.IsActive = dto.IsActive.Value;
+        if (dto.ExpiresAt.HasValue) coupon.ExpiresAt = dto.ExpiresAt;
+        if (dto.MaxUsages.HasValue) coupon.MaxUsages = dto.MaxUsages;
+
+        await _context.SaveChangesAsync();
+        return Map(coupon);
     }
 
     public async Task ToggleActiveAsync(int id)

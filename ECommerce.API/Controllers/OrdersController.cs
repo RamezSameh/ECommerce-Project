@@ -5,6 +5,7 @@ using ECommerce.Core.Entities;
 using ECommerce.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 
 namespace ECommerce.API.Controllers;
@@ -17,13 +18,15 @@ public class OrdersController : ControllerBase
     private readonly IOrderService _orderService;
     private readonly InvoiceService _invoiceService;
     private readonly IPaymentService _paymentService;
+    private readonly IStripeWebhookService _webhookService;
 
     public OrdersController(IOrderService orderService, InvoiceService invoiceService,
-        IPaymentService paymentService)
+        IPaymentService paymentService, IStripeWebhookService webhookService)
     {
         _orderService = orderService;
         _invoiceService = invoiceService;
         _paymentService = paymentService;
+        _webhookService = webhookService;
     }
 
     // ---- Customer ----
@@ -90,7 +93,8 @@ public class OrdersController : ControllerBase
     public async Task<IActionResult> PaymentSuccess([FromQuery] int id)
     {
         var order = await TryGetOrder(id);
-        // In production, verify via webhook instead of trusting the return URL.
+        // Payment state is authoritative only via the Stripe webhook
+        // (POST /api/orders/webhooks/stripe); this return URL is for display only.
         return Ok(ApiResponse<OrderDto>.Success(order));
     }
 
@@ -99,6 +103,24 @@ public class OrdersController : ControllerBase
     {
         var order = await TryGetOrder(id);
         return Ok(ApiResponse<OrderDto>.Fail($"Payment for order {id} was cancelled"));
+    }
+
+    // ---- Stripe webhook (Stripe sends no JWT; authenticity is proven by the
+    // signature header, and it is exempted from the global rate limiter) ----
+
+    [AllowAnonymous]
+    [DisableRateLimiting]
+    [HttpPost("webhooks/stripe")]
+    public async Task<IActionResult> StripeWebhook()
+    {
+        // The raw body must be read untouched: signature verification fails on
+        // any re-serialization of the payload.
+        using var reader = new StreamReader(Request.Body);
+        var payload = await reader.ReadToEndAsync();
+        var signature = Request.Headers["Stripe-Signature"].FirstOrDefault() ?? string.Empty;
+
+        var result = await _webhookService.ProcessAsync(payload, signature);
+        return Ok(ApiResponse<object>.Success(result, result is null ? "Event ignored" : "Webhook processed"));
     }
 
     // ---- Admin ----
