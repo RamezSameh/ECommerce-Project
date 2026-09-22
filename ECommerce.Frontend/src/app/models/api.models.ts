@@ -22,6 +22,14 @@ export interface Category {
   parentId?: number;
 }
 
+export interface CategoryTree {
+  id: number;
+  name: string;
+  slug?: string;
+  parentId?: number;
+  children: CategoryTree[];
+}
+
 export interface ProductSummary {
   id: number;
   name: string;

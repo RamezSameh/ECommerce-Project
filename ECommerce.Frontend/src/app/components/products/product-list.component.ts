@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CartService } from '../../services/cart.service';
 import { ProductService } from '../../services/product.service';
-import { Category, ProductSummary, PagedResult } from '../../models/api.models';
+import { Category, CategoryTree, ProductSummary, PagedResult } from '../../models/api.models';
 import { NotificationService } from '../../services/notification.service';
 
 @Component({
@@ -12,7 +12,8 @@ import { NotificationService } from '../../services/notification.service';
     <section class="catalog" id="products">
       <aside class="filters card">
         <h3>تصفية النتائج</h3><label>بحث<input [(ngModel)]="search" (ngModelChange)="load(1)" placeholder="اسم المنتج أو العلامة" /></label>
-        <label>التصنيف<select [(ngModel)]="categoryId" (ngModelChange)="load(1)"><option [ngValue]="undefined">كل التصنيفات</option><option *ngFor="let c of categories" [ngValue]="c.id">{{ c.name }}</option></select></label>
+        <div class="category-tree"><h4>التصنيف</h4><button class="tree-node" [class.active]="categoryId === undefined" (click)="selectCategory(undefined)">كل التصنيفات</button><ng-container *ngTemplateOutlet="treeNode; context: { $implicit: categoryTree }"></ng-container></div>
+        <ng-template #treeNode let-nodes><ul><li *ngFor="let c of nodes"><button class="tree-node" [class.active]="categoryId === c.id" (click)="selectCategory(c.id)">{{ c.name }}</button><ng-container *ngIf="c.children?.length"><ng-container *ngTemplateOutlet="treeNode; context: { $implicit: c.children }"></ng-container></ng-container></li></ul></ng-template>
         <div class="two-columns"><label>من<input type="number" [(ngModel)]="minPrice" (change)="load(1)" /></label><label>إلى<input type="number" [(ngModel)]="maxPrice" (change)="load(1)" /></label></div>
         <label>الترتيب<select [(ngModel)]="sortBy" (ngModelChange)="load(1)"><option value="">الأحدث</option><option value="price_asc">الأقل سعراً</option><option value="price_desc">الأعلى سعراً</option><option value="popularity">الأكثر شعبية</option></select></label>
       </aside>
@@ -26,9 +27,10 @@ import { NotificationService } from '../../services/notification.service';
   standalone: false
 })
 export class ProductListComponent implements OnInit {
-  products: ProductSummary[] = []; categories: Category[] = []; search = ''; categoryId?: number; minPrice?: number; maxPrice?: number; sortBy = ''; page = 1; totalPages = 0; totalCount = 0; loading = false;
+  products: ProductSummary[] = []; categoryTree: CategoryTree[] = []; search = ''; categoryId?: number; minPrice?: number; maxPrice?: number; sortBy = ''; page = 1; totalPages = 0; totalCount = 0; loading = false;
   constructor(private ps: ProductService, private cs: CartService, private router: Router, private route: ActivatedRoute, private notifications: NotificationService) {}
-  ngOnInit(): void { this.route.queryParams.subscribe(params => { this.search = params['search'] || ''; this.load(1); }); this.ps.getCategories().subscribe(r => this.categories = r.data || []); }
+  ngOnInit(): void { this.route.queryParams.subscribe(params => { this.search = params['search'] || ''; this.load(1); }); this.ps.getCategoryTree().subscribe(r => this.categoryTree = r.data || []); }
+  selectCategory(id?: number): void { this.categoryId = id; this.load(1); }
   load(page: number): void { this.loading = true; this.page = page; this.ps.getAll({ search: this.search, categoryId: this.categoryId, minPrice: this.minPrice, maxPrice: this.maxPrice, sortBy: this.sortBy, page }).subscribe(r => { const data = r.data as PagedResult<ProductSummary> | null; this.products = data?.items || []; this.totalPages = data?.totalPages || 0; this.totalCount = data?.totalCount || 0; this.loading = false; }); }
   add(product: ProductSummary): void { this.cs.addItem({ productId: product.id, quantity: 1 }).subscribe({ next: () => this.notifications.show(`تمت إضافة «${product.name}» إلى السلة`), error: () => this.notifications.show('تعذرت إضافة المنتج إلى السلة', 'error') }); }
   open(id: number): void { this.router.navigate(['/products', id]); }

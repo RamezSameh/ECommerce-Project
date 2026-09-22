@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { ApiResponse, AdminUser, Coupon, Order, PagedResult, SalesReport } from '../models/api.models';
+import { ApiResponse, AdminUser, Coupon, Order, PagedResult, ProductSummary, SalesReport } from '../models/api.models';
 import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
@@ -35,4 +35,8 @@ export class AdminService {
   createCoupon(data: object): Observable<ApiResponse<Coupon>> { return this.http.post<ApiResponse<Coupon>>(`${this.api}/coupons`, data, this.options()); }
   toggleCoupon(id: number): Observable<ApiResponse<null>> { return this.http.post<ApiResponse<null>>(`${this.api}/coupons/${id}/toggle`, {}, this.options()); }
   deleteCoupon(id: number): Observable<ApiResponse<null>> { return this.http.delete<ApiResponse<null>>(`${this.api}/coupons/${id}`, this.options()); }
+  lowStock(threshold = 5, page = 1, pageSize = 20): Observable<ApiResponse<PagedResult<ProductSummary>>> {
+    const params = new HttpParams().set('threshold', threshold).set('page', page).set('pageSize', pageSize);
+    return this.http.get<ApiResponse<PagedResult<ProductSummary>>>(`${environment.apiUrl}/products/low-stock`, { ...this.options(), params });
+  }
 }

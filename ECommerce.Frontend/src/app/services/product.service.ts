@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { ApiResponse, Category, PagedResult, Product, ProductSummary, Review } from '../models/api.models';
+import { ApiResponse, Category, CategoryTree, PagedResult, Product, ProductSummary, Review } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class ProductService {
@@ -22,6 +22,9 @@ export class ProductService {
   }
   getCategories(): Observable<ApiResponse<Category[]>> {
     return this.http.get<ApiResponse<Category[]>>(`${this.api}/categories`);
+  }
+  getCategoryTree(): Observable<ApiResponse<CategoryTree[]>> {
+    return this.http.get<ApiResponse<CategoryTree[]>>(`${this.api}/categories/tree`);
   }
   addReview(id: number, data: object, headers: HttpHeaders): Observable<ApiResponse<Review>> {
     return this.http.post<ApiResponse<Review>>(`${this.api}/${id}/reviews`, data, { headers });
