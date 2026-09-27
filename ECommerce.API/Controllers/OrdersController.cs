@@ -120,7 +120,7 @@ public class OrdersController : ControllerBase
         var signature = Request.Headers["Stripe-Signature"].FirstOrDefault() ?? string.Empty;
 
         var result = await _webhookService.ProcessAsync(payload, signature);
-        return Ok(ApiResponse<object>.Success(result, result is null ? "Event ignored" : "Webhook processed"));
+        return Ok(ApiResponse<object?>.Success(result, result is null ? "Event ignored" : "Webhook processed"));
     }
 
     // ---- Admin ----
